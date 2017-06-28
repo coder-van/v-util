@@ -20,21 +20,21 @@ import (
 // RotateHandler writes messages by lines limit, file size limit, or time frequency.
 type RotateHandler struct {
 	mw *MuxWriter
-	
-	FilePath          string
-	MaxLines          int
-	curLines          int
+
+	FilePath string
+	MaxLines int
+	curLines int
 
 	// Rotate at size
-	MaxSize         int
-	curSize         int
+	MaxSize int
+	curSize int
 
 	// Rotate daily
-	MaxDays        int
-	openDate       int
+	MaxDays  int
+	openDate int
 
-	Rotatable      bool
-	startLock      sync.Mutex
+	Rotatable bool
+	startLock sync.Mutex
 }
 
 // an *os.File writer with locker.
@@ -61,41 +61,41 @@ func (l *MuxWriter) SetLogFile(fd *os.File) {
 // create a FileLogWriter returning as LoggerInterface.
 func NewDefaultHandler(fp string) *RotateHandler {
 	w := &RotateHandler{
-		FilePath: fp,
-		Rotatable:   false,
+		FilePath:  fp,
+		Rotatable: false,
 	}
 	// use MuxWriter instead direct use os.File for lock write when rotate
 	w.mw = new(MuxWriter)
 	return w
 }
 
-func NewDailyRotateHandler(fp string, days int) *RotateHandler{
+func NewDailyRotateHandler(fp string, days int) *RotateHandler {
 	w := &RotateHandler{
-		FilePath: fp,
-		MaxDays:  days,
-		Rotatable:   true,
+		FilePath:  fp,
+		MaxDays:   days,
+		Rotatable: true,
 	}
 	// use MuxWriter instead direct use os.File for lock write when rotate
 	w.mw = new(MuxWriter)
 	return w
 }
 
-func NewLinesRotateHandler(fp string, lines int) *RotateHandler{
+func NewLinesRotateHandler(fp string, lines int) *RotateHandler {
 	w := &RotateHandler{
-		FilePath: fp,
+		FilePath:  fp,
 		MaxLines:  lines,
-		Rotatable:   true,
+		Rotatable: true,
 	}
 	// use MuxWriter instead direct use os.File for lock write when rotate
 	w.mw = new(MuxWriter)
 	return w
 }
 
-func NewSizeRotateHandler(fp string, size int) *RotateHandler{
+func NewSizeRotateHandler(fp string, size int) *RotateHandler {
 	w := &RotateHandler{
-		FilePath: fp,
-		MaxSize:  size,
-		Rotatable:   true,
+		FilePath:  fp,
+		MaxSize:   size,
+		Rotatable: true,
 	}
 	// use MuxWriter instead direct use os.File for lock write when rotate
 	w.mw = new(MuxWriter)
@@ -103,7 +103,7 @@ func NewSizeRotateHandler(fp string, size int) *RotateHandler{
 }
 
 // inherit io.Writer
-func (w *RotateHandler) Write(data []byte) (int, error){
+func (w *RotateHandler) Write(data []byte) (int, error) {
 	if Debug {
 		fmt.Println(string(data))
 	}
@@ -114,11 +114,10 @@ func (w *RotateHandler) Write(data []byte) (int, error){
 }
 
 func (w *RotateHandler) Init() {
-	fmt.Println(w.FilePath)
 	if len(w.FilePath) == 0 {
 		panic(errors.New("config must have filename"))
 	}
-	
+
 	fd, err := w.createLogFile()
 	if err != nil {
 		panic(err)
@@ -132,8 +131,7 @@ func (w *RotateHandler) Init() {
 func (w *RotateHandler) doCheckRotate(size int) {
 	w.startLock.Lock()
 	defer w.startLock.Unlock()
-	if w.Rotatable && (
-		(w.MaxLines > 0 && w.curLines >= w.MaxLines) ||
+	if w.Rotatable && ((w.MaxLines > 0 && w.curLines >= w.MaxLines) ||
 		(w.MaxSize > 0 && w.curSize >= w.MaxSize) ||
 		(time.Now().Day() != w.openDate)) {
 		if err := w.DoRotate(); err != nil {
@@ -146,6 +144,7 @@ func (w *RotateHandler) doCheckRotate(size int) {
 }
 
 func (w *RotateHandler) createLogFile() (*os.File, error) {
+	os.MkdirAll(filepath.Dir(w.FilePath), 0755)
 	return os.OpenFile(w.FilePath, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
 }
 
